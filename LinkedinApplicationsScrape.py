@@ -57,7 +57,7 @@ def collect_job_data():
         company_names.append(company.text)
 
     #regex for time since application    
-    pattern = re.compile(r'(Application viewed|Applied) (\d+)(h|d|w|mo|y) ago')
+    pattern = re.compile(r'(Application viewed|Applied) (\d+)(h|d|w|mo|yr) ago')
 
     #fetching time since application, sort views as well
     time_since_applying = driver.find_elements(By.CSS_SELECTOR, '.reusable-search-simple-insight__text--small')
@@ -75,9 +75,6 @@ def collect_job_data():
 
 
 def export_data_excel():
-    workbook_name = "LinkedIn Application Data"
-    workbook = xlsxwriter.Workbook(workbook_name)
-    worksheet = workbook.add_worksheet()
 
     worksheet.write('A1', 'Job Title')
     worksheet.write('B1', 'Company Name')
@@ -89,6 +86,35 @@ def export_data_excel():
         company_name_cell = 'B'+str(row_number)
         time_since_app_cell = 'C'+str(row_number)
         app_viewed_cell = 'D'+str(row_number)
+        try:
+            worksheet.write(job_title_cell, job_titles[row_number-2])
+        except:
+            print('There are no more job titles')
+        try:
+            worksheet.write(company_name_cell, company_names[row_number-2])
+        except:
+            print('There are no more companies')
+        try:
+            worksheet.write(time_since_app_cell, time_since_applications[row_number-2])
+        except:
+            print('There are no more times since applications')
+        try:
+            worksheet.write(app_viewed_cell, application_views[row_number-2])
+        except:
+            print('There are no more view flags')
+
+def create_application_views_bar_graph():
+
+    application_viewed_count = application_views.count('y')
+    application_not_viewed_coumt = application_views.count('n')
+    
+    worksheet = workbook.add_worksheet('Applications Viewed Bar Graph')
+    worksheet.write('A1', 'Status')
+    worksheet.write('B1', 'Count')
+    worksheet.write('A2', 'Viewed')
+    worksheet.write('B2', application_viewed_count)
+    worksheet.write('A3', 'Not viewed')
+    worksheet.write('B3', application_not_viewed_count)
     
 
 options = webdriver.ChromeOptions()
@@ -99,5 +125,10 @@ job_titles = []
 company_names = []
 time_since_applications = []
 application_views = []
+
+#initialise excel workbook
+workbook_name = "LinkedIn Application Data"
+    workbook = xlsxwriter.Workbook(workbook_name)
+    worksheet = workbook.add_worksheet()
 
 run_linkedin_scraper()
