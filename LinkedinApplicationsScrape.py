@@ -9,11 +9,6 @@ import xlsxwriter
 import re
 from collections import Counter
 
-#visualisations, num of application line graph dates
-#pie chart views vs applications
-#totals in spreadhseet, number of jobs
-#organisations that viewed your application
-
 def run_linkedin_scraper():
     url = "https://www.linkedin.com/my-items/saved-jobs/?cardType=APPLIED"
     driver.get(url)
