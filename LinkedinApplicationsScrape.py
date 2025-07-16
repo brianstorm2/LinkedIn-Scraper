@@ -7,6 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import time
 import xlsxwriter
 import re
+from collections import Counter
 
 #visualisations, num of application line graph dates
 #pie chart views vs applications
@@ -104,13 +105,18 @@ def export_data_excel():
         except:
             print('There are no more view flags')
 
+    create_application_views_bar_graph()
+    create_application_timeline_line_graph()
+    workbook.close()
+        
+
 def create_application_views_bar_graph():
 
     application_viewed_count = application_views.count('y')
-    application_not_viewed_coumt = application_views.count('n')
+    application_not_viewed_count = application_views.count('n')
 
     #adding data
-    worksheet = workbook.add_worksheet('Applications Viewed Bar Graph')
+    worksheet = workbook.add_worksheet('Applications_Viewed_Bar_Graph')
     worksheet.write('A1', 'Status')
     worksheet.write('B1', 'Count')
     worksheet.write('A2', 'Viewed')
@@ -123,8 +129,8 @@ def create_application_views_bar_graph():
 
     chart.add_series({
     'name':       'Application Status',
-    'categories': '=Sheet1!$A$2:$A$3',
-    'values':     '=Sheet1!$B$2:$B$3',
+    'categories': '=Applications_Viewed_Bar_Graph!$A$2:$A$3',
+    'values':     '=Applications_Viewed_Bar_Graph!$B$2:$B$3',
     })
 
     # add chart title and axis labels
@@ -135,8 +141,58 @@ def create_application_views_bar_graph():
     # insert chart into worksheet
     worksheet.insert_chart('D2', chart)
 
-    workbook.close()
+def create_application_timeline_line_graph():
+
+    worksheet = workbook.add_worksheet('Applications_Timeline_Graph')
     
+    #regex for timeline
+    pattern = re.compile(r'^(\d+)(h|d|w|mo|yr)$')
+
+    #weighting time units
+    time_weights = {'h': 1, 'd': 24, 'w': 168, 'mo': 720, 'yr': 8760}
+
+    parsed_times = []
+    for entry in time_since_applications:
+        if entry == 'unknown':
+            continue
+        match = pattern.match(entry)
+        if match:
+            value, unit = match.groups()
+            value = int(value)
+            hours = value * time_weights[unit]
+            parsed_times.append((entry, hours))
+
+    labels_only = [label for label, _ in parsed_times]
+    counts = Counter(labels_only)
+
+    # sort times chronologically
+    sorted_items = sorted(counts.items(), key=lambda item: int(pattern.match(item[0]).group(1)) * time_weights[pattern.match(item[0]).group(2)])
+
+    worksheet.write('A1', 'Time Since Application')
+    worksheet.write('B1', 'Number of Applications')
+
+    
+    for row, (label, count) in enumerate(sorted_items, start=1):
+        worksheet.write(row, 0, label)
+        worksheet.write(row, 1, count)
+
+    
+    chart = workbook.add_chart({'type': 'line'})
+
+    chart.add_series({
+        'name': 'Applications Over Time',
+        'categories': f'=Applications_Timeline_Graph!$A$2:$A${len(sorted_items)+1}',
+        'values':     f'=Applications_Timeline_Graph!$B$2:$B${len(sorted_items)+1}',
+        'marker': {'type': 'circle'},
+        'line': {'color': 'blue'}
+    })
+
+
+    chart.set_title({'name': 'Job Applications Over Time'})
+    chart.set_x_axis({'name': 'Time Since Application'})
+    chart.set_y_axis({'name': 'Number of Applications'})
+
+    worksheet.insert_chart('D2', chart)
 
 options = webdriver.ChromeOptions()
 driver = webdriver.Chrome(options=options)
@@ -148,7 +204,8 @@ time_since_applications = []
 application_views = []
 
 #initialise excel workbook
-workbook_name = "LinkedIn Application Data"
+workbook_name = "LinkedIn Application Data.xlsx"
 workbook = xlsxwriter.Workbook(workbook_name)
 
 run_linkedin_scraper()
+c
