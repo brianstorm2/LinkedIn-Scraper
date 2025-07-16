@@ -75,6 +75,7 @@ def collect_job_data():
 
 
 def export_data_excel():
+    worksheet = workbook.add_worksheet('Full Application Data')
 
     worksheet.write('A1', 'Job Title')
     worksheet.write('B1', 'Company Name')
@@ -107,7 +108,8 @@ def create_application_views_bar_graph():
 
     application_viewed_count = application_views.count('y')
     application_not_viewed_coumt = application_views.count('n')
-    
+
+    #adding data
     worksheet = workbook.add_worksheet('Applications Viewed Bar Graph')
     worksheet.write('A1', 'Status')
     worksheet.write('B1', 'Count')
@@ -115,6 +117,25 @@ def create_application_views_bar_graph():
     worksheet.write('B2', application_viewed_count)
     worksheet.write('A3', 'Not viewed')
     worksheet.write('B3', application_not_viewed_count)
+
+    #creating chart
+    chart = workbook.add_chart({'type': 'column'})
+
+    chart.add_series({
+    'name':       'Application Status',
+    'categories': '=Sheet1!$A$2:$A$3',
+    'values':     '=Sheet1!$B$2:$B$3',
+    })
+
+    # add chart title and axis labels
+    chart.set_title({'name': 'Job Application Views'})
+    chart.set_x_axis({'name': 'Status'})
+    chart.set_y_axis({'name': 'Number of Jobs'})
+
+    # insert chart into worksheet
+    worksheet.insert_chart('D2', chart)
+
+    workbook.close()
     
 
 options = webdriver.ChromeOptions()
@@ -128,7 +149,6 @@ application_views = []
 
 #initialise excel workbook
 workbook_name = "LinkedIn Application Data"
-    workbook = xlsxwriter.Workbook(workbook_name)
-    worksheet = workbook.add_worksheet()
+workbook = xlsxwriter.Workbook(workbook_name)
 
 run_linkedin_scraper()
